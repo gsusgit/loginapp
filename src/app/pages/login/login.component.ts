@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import {NgForm} from "@angular/forms";
 import {UsuarioModel} from "../../models/usuario.model";
+import {AuthService} from "../../services/auth.service";
+import Swal from 'sweetalert2';
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-login',
@@ -10,8 +13,9 @@ import {UsuarioModel} from "../../models/usuario.model";
 export class LoginComponent implements OnInit {
 
   usuario: UsuarioModel;
+  recordarme: false;
 
-  constructor() { }
+  constructor(private auth: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.usuario = new UsuarioModel();
@@ -21,9 +25,23 @@ export class LoginComponent implements OnInit {
     if (form.invalid) {
       return;
     }
-    console.log('Finalizado Log in');
-    console.log(this.usuario);
-    console.log(form);
+    Swal.fire({
+      allowOutsideClick: false,
+      icon: 'info',
+      title: 'Log in',
+      text: 'Cargando...'
+    });
+    Swal.showLoading();
+    this.auth.logIn(this.usuario).subscribe(respuesta => {
+      Swal.close();
+      this.router.navigateByUrl('/home');
+        }, (err) =>
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: err.error.error.message
+        })
+    );
   }
 
 }

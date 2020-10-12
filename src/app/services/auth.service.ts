@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import {HttpClient} from "@angular/common/http";
-import {UsuarioModel} from "../models/usuario.model";
+import { HttpClient } from "@angular/common/http";
+import { UsuarioModel } from "../models/usuario.model";
+import { map } from "rxjs/operators";
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +11,11 @@ export class AuthService {
   private url = 'https://identitytoolkit.googleapis.com/v1/accounts:';
   private api_key = 'AIzaSyB72lc9GFkA2ZVAJV8TCoJGTxBVaSk3HXY';
 
-  constructor(private http: HttpClient) { }
+  userToken: string;
+
+  constructor(private http: HttpClient) {
+    this.leerToken();
+  }
 
   logOut() {
 
@@ -18,10 +23,16 @@ export class AuthService {
 
   logIn(usuario: UsuarioModel) {
     const authData = {
-      ...usuario,
+      email: usuario.email,
+      password: usuario.password,
       returnSecureToken: true
     }
-    this.http.post(`${this.url}signInWithPassword?key=${this.api_key}`, authData);
+    return this.http.post(`${this.url}signInWithPassword?key=${this.api_key}`, authData).pipe(
+        map(respuesta => {
+          this.guardarToken(respuesta['idToken']);
+          return respuesta;
+        })
+    );
   }
 
   nuevoUsuario(usuario: UsuarioModel) {
@@ -29,7 +40,26 @@ export class AuthService {
       ...usuario,
       returnSecureToken: true
     }
-    return this.http.post(`${this.url}signUp?key=${this.api_key}`, authData);
+    return this.http.post(`${this.url}signUp?key=${this.api_key}`, authData).pipe(
+        map(respuesta => {
+          this.guardarToken(respuesta['idToken']);
+          return respuesta;
+        })
+    );
+  }
+
+  private guardarToken(idToken: string) {
+    this.userToken = idToken;
+    localStorage.setItem('token', idToken);
+  }
+
+  private leerToken() {
+    if (localStorage.getItem('token')) {
+      this.userToken = localStorage.getItem('token');
+    } else {
+      this.userToken = '';
+    }
+    return this.userToken;
   }
 
 }
